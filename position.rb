@@ -21,24 +21,18 @@ class Position
     symbol = value
     symbol = EMPTY if value == 0
     symbol = BOMB if value == -1
-    # symbol = HIDDEN if hidden
-    # symbol = FLAGGED if flagged
+    symbol = HIDDEN if hidden
+    symbol = FLAGGED if flagged
 
     "#{SPACER}#{symbol}#{SPACER}"
   end
 
   def reveal
     self.hidden = false
-    # again...WHY???
-    # ************************************
-    # ************************************
-    # also have to reveal adjacent empties
-    # ************************************
-    # ************************************
   end
 
   def flag
-    flagged = true
+    self.flagged = !self.flagged
   end
 
   def bomb?
@@ -47,6 +41,10 @@ class Position
 
   def revealed?
     !hidden
+  end
+
+  def flagged?
+    flagged
   end
 
   def self.spacer

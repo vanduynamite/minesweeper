@@ -1,4 +1,6 @@
 require_relative "board.rb"
+require_relative "errors.rb"
+require "byebug"
 
 class Game
 
@@ -8,14 +10,19 @@ class Game
 
   def play
 
+    # board.display
+
+    until over?
+      system("clear")
+      board.display
+      take_turn
+    end
+
+
+    system("clear")
     board.display
 
-    # until over?
-    #   board.display
-    #   take_turn
-    # end
-    #
-    # board.won? ? "Congratulations!" : "Whoops!"
+    puts board.lost? ? "Whoops! Kaboom!!!" : "Congratulations!"
 
   end
 
@@ -25,47 +32,44 @@ class Game
     action = input[:action]
 
     action == 'r' ? board[pos].reveal : board[pos].flag
+
+    # ***********************************************************
+    # ***********************************************************
+    # also have to reveal adjacent empties, if empty was revealed
+    # ***********************************************************
+    # ***********************************************************
   end
 
   def get_input
+    puts "Choose a location to reveal or flag ('x,y' or 'x,y f' to flag)"
+    print " > "
 
-    response = nil
-
-    until response && valid_input?(response)
-      puts "Choose a location to reveal or flag ('x,y' or 'x,y f' to flag)"
+    begin
+      response = parse_input(gets.chomp)
+    rescue FormatError, FlaggedError => e
+      puts e.message
       print " > "
-
-      begin
-        response = parse_input(gets.chomp)
-      rescue
-        puts "Invalid input, please follow the format."
-        puts ""
-        response = nil
-      end
-
+      retry
     end
 
     response
-
   end
 
   def parse_input(response)
-    # response should look like this:
-    ## 1,1 f
-    ## 2,4
-
-    # input should return this:
-    ## {position: [0,1], action: 'f'} to flag the position
-    ## {position: [2,4], action: 'r'} to reveal the position
-
     input = {
       position: [],
-      action: 'r',
+      action: '',
     }
 
-    action_separated = response.split(" ")
+    response_separated = response.split(" ")
+    response_separated << "r" if response_separated.length == 1
+    raise FormatError unless response_separated.length == 2
 
-    # ok this is being annoying right now
+    input[:action] = response_separated[1]
+    input[:position] = response_separated[0].split(",").map { |el| el.to_i }
+
+    raise FormatError unless valid_input?(input)
+    raise FlaggedError unless not_flagged?(input)
 
     input
 
@@ -73,16 +77,22 @@ class Game
 
   def valid_input?(input)
     pos = input[:position]
-    action = input[:action]
 
-    # if we're flagging, check ensure it's hidden
-    # if we're revealing, make sure it's not flagged
-    # make sure position is within bounds of the board
-
-    # for now return true
+    return false unless action = "r" || action = "f"
+    return false unless pos.length == 2
+    return false unless pos[0].between?(0, board.height - 1)
+    return false unless pos[1].between?(0, board.width - 1)
 
     true
+  end
 
+  def not_flagged?(input)
+    pos = input[:position]
+    action = input[:action]
+
+    return false if action == 'r' && board[pos].flagged?
+
+    true
   end
 
   def over?
@@ -94,9 +104,13 @@ class Game
 
 end
 
-# game = Game.new([9, 9], 10) # easy
-game = Game.new([10, 10], 13) # medium-ish
+
+
+# game = Game.new([3,3], 1) # simple, for testing
+game = Game.new([9, 9], 10) # easy
+# game = Game.new([10, 10], 13) # medium-ish
 # game = Game.new([16, 16], 24) # medium
 # game = Game.new([25, 25], 99) # hard
+
 
 game.play

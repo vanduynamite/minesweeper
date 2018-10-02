@@ -29,10 +29,12 @@ class Board
   end
 
   def won?
+    # byebug
     hidden_tiles == bombs
   end
 
   def lost?
+    # byebug
     grid.any? do |row|
       row.any? do |pos|
         pos.bomb? && pos.revealed?
@@ -72,7 +74,6 @@ class Board
     end
 
     self.grid = result
-    # grid = result # ok why does this not work
   end
 
   def populate_bombs(bombs)
